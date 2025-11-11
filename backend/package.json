@@ -1,7 +1,7 @@
 {
   "name": "learnhubpro-backend",
   "version": "1.0.0",
-  "description": "Backend for LearnHubPro payment processing",
+  "description": "Full backend for LearnHubPro",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "mongoose": "^8.4.0",
+    "ws": "^8.17.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

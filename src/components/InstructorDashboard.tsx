@@ -1,3 +1,4 @@
+import { User } from '../App'; // <-- ADD THIS
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -31,7 +32,13 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export function InstructorDashboard() {
+// ADD THIS INTERFACE
+interface InstructorDashboardProps {
+  user: User;
+}
+
+// UPDATE THIS LINE
+export function InstructorDashboard({ user }: InstructorDashboardProps) {
   const courses = [
     {
       id: 'CS101',
@@ -118,8 +125,14 @@ export function InstructorDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* ADD THIS WELCOME HEADER */}
+      <h1 className="text-3xl font-bold">Instructor Dashboard</h1>
+      <p className="text-xl text-gray-700 -mt-4 mb-4">Welcome, {user.username}!</p>
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* ... (rest of your original file) ... */}
+// ... (The rest of your file content remains unchanged)
         <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm">Active Students</CardTitle>
