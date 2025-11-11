@@ -134,3 +134,33 @@ button:hover {
   background-color: var(--accent);
   color: var(--accent-foreground);
 }
+/* Add this to the end of src/App.css */
+
+.chat-widget-trigger {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.chat-window {
+  position: fixed;
+  bottom: 6rem; /* 2rem (bottom) + 4rem (trigger height) */
+  right: 2rem;
+  width: 350px;
+  height: 500px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure CardContent is not padded and ScrollArea fills space */
+.chat-window > div[data-slot="card-content"] {
+  flex-grow: 1;
+  overflow: hidden;
+}
