@@ -29,6 +29,8 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
   const [selectedMethod, setSelectedMethod] = useState<string>('credit_card');
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null); // <-- ADDED: For API errors
+  const [transactionId, setTransactionId] = useState<string | null>(null); // <-- ADDED: To store Txn ID
 
   const paymentMethods: PaymentMethod[] = [
     {
@@ -58,16 +60,55 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
   const processingFee = invoice.amount * (currentMethod.feePercent / 100) + currentMethod.feeFixed;
   const totalAmount = invoice.amount + processingFee;
 
+  // --- REPLACED: handlePayment function ---
   const handlePayment = async () => {
     setProcessing(true);
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setProcessing(false);
-    setSuccess(true);
-    setTimeout(() => {
-      onComplete();
-    }, 2000);
+    setSuccess(false);
+    setError(null); // Reset errors on a new attempt
+
+    try {
+      // Call the backend API
+      const response = await fetch('http://localhost:5000/api/payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          invoiceId: invoice.id,
+          service: invoice.service,
+          amount: totalAmount.toFixed(2),
+          paymentMethodType: selectedMethod,
+          // NOTE: In a real-world app, you would send a *token* from a
+          // payment provider (like Stripe.js) here, NOT raw credit card data.
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle server errors (e.g., 400, 500)
+        throw new Error(data.message || 'Payment failed. Please try again.');
+      }
+
+      // --- Payment was successful ---
+      setProcessing(false);
+      setSuccess(true);
+      setTransactionId(data.transactionId); // Save the transaction ID from the backend
+
+      // Wait 2 seconds on the success screen before calling onComplete
+      setTimeout(() => {
+        onComplete();
+      }, 2000);
+
+    } catch (err: any) {
+      // Handle network errors or the error thrown above
+      console.error('Payment API call failed:', err);
+      setProcessing(false);
+      setError(err.message || 'An unknown error occurred. Please check your connection.');
+    }
   };
+  // --- END OF REPLACEMENT ---
+
 
   if (success) {
     return (
@@ -83,7 +124,7 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
             </p>
             <div className="bg-gray-50 p-4 rounded-lg text-left max-w-md mx-auto">
               <p className="text-sm text-gray-600 mb-1">Transaction ID</p>
-              <p className="text-gray-900">TXN-{Date.now()}</p>
+              <p className="text-gray-900">{transactionId || 'Processing...'}</p>
               <p className="text-sm text-gray-600 mt-3 mb-1">Invoice</p>
               <p className="text-gray-900">{invoice.id}</p>
             </div>
@@ -95,7 +136,7 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Invoice Summary */}
+      {/* ... (Invoice Summary card - no changes) ... */}
       <Card className="bg-white">
         <CardHeader>
           <CardTitle>Payment Checkout</CardTitle>
@@ -119,7 +160,7 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
         </CardContent>
       </Card>
 
-      {/* Payment Method Selection */}
+      {/* ... (Payment Method Selection card - no changes) ... */}
       <Card className="bg-white">
         <CardHeader>
           <CardTitle>Select Payment Method</CardTitle>
@@ -151,7 +192,7 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
             })}
           </div>
 
-          {/* Payment Details Form */}
+          {/* ... (Payment Details Form logic - no changes) ... */}
           {selectedMethod === 'credit_card' && (
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
@@ -174,7 +215,6 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
               </div>
             </div>
           )}
-
           {selectedMethod === 'ach' && (
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
@@ -199,7 +239,6 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
               </div>
             </div>
           )}
-
           {selectedMethod === 'wallet' && (
             <Alert className="bg-blue-50 border-blue-200">
               <AlertCircle className="h-4 w-4 text-blue-600" />
@@ -211,7 +250,8 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
         </CardContent>
       </Card>
 
-      {/* Fee Breakdown */}
+
+      {/* --- Fee Breakdown & Pay Button Card --- */}
       <Card className="bg-white border-2 border-indigo-200">
         <CardHeader>
           <CardTitle>Payment Summary</CardTitle>
@@ -219,6 +259,7 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
+            {/* ... (Fee breakdown - no changes) ... */}
             <div className="flex justify-between">
               <span className="text-gray-600">Service Amount</span>
               <span className="text-gray-900">${invoice.amount.toFixed(2)}</span>
@@ -249,6 +290,17 @@ export function PaymentCheckout({ invoice, onComplete }: PaymentCheckoutProps) {
               Your payment is secured with 256-bit encryption and is HIPAA & PCI-DSS compliant.
             </AlertDescription>
           </Alert>
+
+          {/* --- ADDED: Error message display --- */}
+          {error && (
+            <Alert className="bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-900">
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
+          {/* --- END OF ADDED BLOCK --- */}
 
           <Button
             onClick={handlePayment}
